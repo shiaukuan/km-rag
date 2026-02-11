@@ -1,14 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-標準 RAG 端對端測試腳本
+標準 RAG 端對端測試腳本（電影字幕版）
 
-與 test_rag.py 的差異：
-- test_rag.py: 透過 /api/v1/query/execute API，上下文為 merged file（整份文件）
+與 test_rag_movie.py 的差異：
+- test_rag_movie.py: 透過 /api/v1/query/execute API，上下文為 merged file（整份文件）
 - 本腳本: 直接操作 Chroma + 呼叫 LLM，上下文為 similarity_search 的 k 個 chunk 拼接
 
 流程：
-1. 用 pdfplumber 將 PDF 轉為 TXT
-2. 解析黃金問答
+1. 讀取 movie/chinese/ 下 5 份 TXT 字幕純文字
+2. 解析 movie/Movie_QA.txt 黃金問答
 3. 透過 API 匯入文件至 collection
 4. 直接用 Chroma similarity_search + LLM API 逐題測試
 5. 比對結果並輸出報告
@@ -18,11 +18,11 @@ import sys
 import requests
 
 from config import settings, get_user_prompt_template
-from test_rag import (
+from test_rag_movie import (
     API_BASE,
     COLLECTION_NAME,
     QUERY_TIMEOUT,
-    convert_pdfs_to_txt,
+    load_txt_files,
     parse_golden_qa,
     import_documents,
     check_answer,
@@ -152,7 +152,7 @@ def run_qa_tests_standard(qa_list, k=5):
             # --- 標準 RAG：直接搜尋 chunk ---
             search_results = chroma.similarity_search_with_score(question, k=k)
             chunks = "\n-----------------\n".join(doc.page_content for doc, _score in search_results)
-            
+
             # 組合 prompt
             user_content = prompt_template.format(chunk=chunks, query=question)
 
@@ -196,11 +196,11 @@ def run_qa_tests_standard(qa_list, k=5):
         else:
             mark = "\u2717 FAIL"
 
-        display_answer = answer[:120].replace("\n", " ")
-        if len(answer) > 120:
-            display_answer += "..."
+        display_answer = answer.replace("\n", " ")
+        # if len(answer) > 120:
+        #     display_answer += "..."
         print(f"   回答: {display_answer}")
-        print(f"   結果: {mark}\n")
+        # print(f"   結果: {mark}\n")
 
         results.append({
             "index": idx,
@@ -214,7 +214,7 @@ def run_qa_tests_standard(qa_list, k=5):
     total = len(qa_list)
     rate = (passed / total * 100) if total else 0
     print("=" * 40)
-    print("=== 標準 RAG 測試結果 ===")
+    print("=== 標準 RAG 測試結果（電影字幕版） ===")
     print(f"通過: {passed}/{total} ({rate:.1f}%)")
     print("=" * 40)
 
@@ -226,12 +226,12 @@ def run_qa_tests_standard(qa_list, k=5):
 # ---------------------------------------------------------------------------
 
 def main():
-    print("=== 標準 RAG 端對端測試（chunk 拼接） ===\n")
+    print("=== 標準 RAG 端對端測試（電影字幕版・chunk 拼接） ===\n")
 
     check_services()
     check_llm_and_embedding()
 
-    txt_paths = convert_pdfs_to_txt()
+    txt_paths = load_txt_files()
     qa_list = parse_golden_qa()
     import_documents(txt_paths)
     run_qa_tests_standard(qa_list)
