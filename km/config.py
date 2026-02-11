@@ -25,13 +25,12 @@ class Settings(BaseSettings):
 
     # LLM API settings
     LLM_URL: str = "http://127.0.0.1:13141/v1"
-    LLM_MODEL_NAME: str = "Qwen3-Next-80B-A3B-Instruct-FP8"
+    LLM_MODEL_NAME: str = "Qwen2.5-7B-Instruct-Q4_K_M"
     LLM_TYPE: str = "llamacpp"
     LLM_API_KEY: str = ""
 
-  
     EMBEDDING_URL: str = "http://127.0.0.1:13142/v1"
-    EMBEDDING_MODEL_NAME: str = "Meta-Llama-3.1-8B-Instruct-Q4_K_M"
+    EMBEDDING_MODEL_NAME: str = "bge-m3-f16"
     EMBEDDING_TYPE: str = "llamacpp"
     # kv cache settings
     MAX_TOKENS_PER_GROUP: int = 13000
