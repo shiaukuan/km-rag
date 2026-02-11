@@ -56,15 +56,25 @@ def check_services():
 # Step 1: PDF → TXT
 # ---------------------------------------------------------------------------
 def convert_pdfs_to_txt():
-    """將 PDF 轉為 TXT，回傳 TXT 檔案路徑列表"""
+    """將 PDF 轉為 TXT，回傳 TXT 檔案路徑列表。若 TXT 已存在則跳過轉檔。"""
     print("[Step 1] PDF 轉 TXT...", end=" ", flush=True)
-
-    os.makedirs(TXT_OUTPUT_DIR, exist_ok=True)
 
     pdf_files = sorted(f for f in os.listdir(PDF_DIR) if f.lower().endswith(".pdf"))
     if not pdf_files:
         print("FAIL — 找不到 PDF 檔案")
         sys.exit(1)
+
+    # 檢查是否所有 TXT 都已存在
+    expected_txts = []
+    for pdf_name in pdf_files:
+        txt_name = os.path.splitext(pdf_name)[0] + ".txt"
+        expected_txts.append(os.path.join(TXT_OUTPUT_DIR, txt_name))
+
+    if all(os.path.exists(p) for p in expected_txts):
+        print(f"跳過（{len(expected_txts)} 個 TXT 已存在）")
+        return expected_txts
+
+    os.makedirs(TXT_OUTPUT_DIR, exist_ok=True)
 
     txt_paths = []
     for pdf_name in pdf_files:
@@ -153,9 +163,24 @@ def parse_golden_qa():
 # ---------------------------------------------------------------------------
 # Step 3: 匯入文件至 collection
 # ---------------------------------------------------------------------------
+def collection_exists():
+    """檢查 collection 是否已存在"""
+    try:
+        r = requests.get(f"{API_BASE}/api/v1/collections", timeout=10)
+        r.raise_for_status()
+        collections = r.json().get("collections", [])
+        return COLLECTION_NAME in collections
+    except Exception:
+        return False
+
+
 def import_documents(txt_paths):
-    """透過 API 匯入 TXT 文件"""
+    """透過 API 匯入 TXT 文件。若 collection 已存在則跳過。"""
     print(f'[Step 3] 匯入文件至 collection "{COLLECTION_NAME}"...', end=" ", flush=True)
+
+    if collection_exists():
+        print("跳過（collection 已存在）")
+        return
 
     file_list = []
     for txt_path in txt_paths:
