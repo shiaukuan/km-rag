@@ -212,3 +212,5 @@ km/test_rag_standard_movie.py
 
 ## 專案 RAG
 km/test_rag_movie.py
+
+![alt text](image.png)

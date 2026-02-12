@@ -86,43 +86,6 @@ def check_llm_and_embedding():
         sys.exit(1)
 
 
-# ---------------------------------------------------------------------------
-# LLM 語意比對
-# ---------------------------------------------------------------------------
-
-def check_answer_llm(answer: str, expected: str) -> bool:
-    """用 LLM 判斷 answer 與 expected 是否表達相同意思，回傳 True/False"""
-    prompt = (
-        "請判斷以下「模型回答」與「標準答案」是否表達相同的意思。\n"
-        "只要核心資訊一致即可，不需要用字完全相同，模型回答可能補充過多但核心資訊也算正確。\n"
-        "請只回覆 YES 或 NO，不要有其他文字。\n\n"
-        f"標準答案：{expected}\n"
-        f"模型回答：{answer}\n"
-    )
-    payload = {
-        "model": settings.LLM_MODEL_NAME,
-        "messages": [{"role": "user", "content": prompt}],
-        "max_tokens": 8,
-        "temperature": 0,
-        "stream": False,
-    }
-    headers = {"Content-Type": "application/json"}
-    if settings.LLM_API_KEY:
-        headers["Authorization"] = f"Bearer {settings.LLM_API_KEY}"
-
-    try:
-        r = requests.post(
-            settings.LLM_API_URL, json=payload, headers=headers, timeout=30
-        )
-        r.raise_for_status()
-        resp = r.json()
-        text = resp["choices"][0]["message"]["content"].strip().upper()
-        print(f"   LLM 判斷: {text}")
-        return text.startswith("YES")
-    except Exception:
-        # LLM 判斷失敗時 fallback 到 bigram 比對
-        return check_answer(answer, expected)
-
 
 # ---------------------------------------------------------------------------
 # Step 4 & 5: 逐題測試（標準 RAG：chunk 拼接）
