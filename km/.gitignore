@@ -10,3 +10,4 @@ venv/*
 test/data/*.pdf
 test/data/*.json
 models/*
+llama.cpp/*
